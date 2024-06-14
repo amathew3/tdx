@@ -1,0 +1,150 @@
+//use anyhow::{Ok, Result};
+use anyhow::{ Result};
+use base64::{engine::general_purpose, Engine as _};
+use clap::Parser;
+use zeroize::Zeroize;
+use std::process::{Command, Stdio};
+use std::io::{BufReader, BufRead};
+use std::result::Result::Ok;
+use std::fs::File;
+use std::io::ErrorKind;
+use std::io::Read;
+use std::io::prelude::*;
+use std::path::Path;
+//use serde::{Deserialize, Serialize};
+//use serde_json::Result;
+mod quote;
+use quote::retrieve_quote;
+
+mod ovmf_var;
+use ovmf_var::retrieve_kbs_params;
+
+mod key_broker;
+use key_broker::retreive_key_from_kbs;
+
+mod disk;
+use disk::{crypt_setup, KEY_LENGTH};
+
+use crate::key_broker::RetrieveKeyRequest;
+
+mod td_report;
+
+#[derive(Parser)]
+struct Args {
+    // Boot partition with rootfs
+    #[arg(short, long)]
+    root: String,
+    // rootfs name
+    #[arg(short, long)]
+    name: String,
+//    #[arg(short, long)]
+//    key_local: String,
+}
+//#[derive(Serialize, Deserialize)]
+//struct retrieved_key {
+//    "wrapped_key":String,
+//    "wrapped_swk":String
+//    }
+#[tokio::main(worker_threads = 1)]
+async fn main() -> Result<()> {
+    let args = Args::parse();
+    let root = args.root;
+    let name: String = args.name;
+//    let key_local: String = args.key_local;
+    // 1. get secret
+    let secret = retrieve_kbs_params()?;
+    let url = String::from_utf8(secret.url)?;
+//    println!("KBS Parmas Retrieved!");
+
+    println!("url received= {}",url);
+    // 2. get quote
+    let quote = retrieve_quote()?;
+    println!("TD Report & Quote Retrieved!");
+    //println!("quote = {}",quote);
+    println!("Quote Bytes: {:?}", quote);
+    //println!("Quote: {}", base64::encode(&quote));
+    //println!("Calling go programe to generate key");
+   // let tmp_key=Command::new("/sbin/go_key_gen")
+   //     .arg(url)
+   //     .stdout(Stdio::piped())
+   //     .output()
+   //     .expect("url failed");
+   let mut tmp_key;
+   let mut command = Command::new("/sbin/go_key_gen")
+       .arg(url)
+       .stdout(Stdio::piped())
+       .spawn()
+       .unwrap();
+
+    //let stdout = command.stdout.take().unwrap();
+
+    //let mut bufread = BufReader::new(stdout);
+    //let mut buf = String::new();
+    //while let Ok(n) = bufread.read_line(&mut buf) {
+    //    if n > 0 {
+    //        println!("Line: {}", buf.trim());
+    //        buf.clear();
+    //    } else {
+    //        break;
+    //    }
+    //}
+    //let mut  tmp_key=buf.trim();
+    //println!("\ngo process started\n");
+//    let output = tmp_key
+//    .wait_with_output()
+//    .expect("failed to wait on child");
+//
+//    assert!(output.status.success());
+   // let tmp_key= String::from_utf8(tmp_key).unwrap();
+   // let f = File::open("/tmp/test.txt");
+   // let mut f1 = match f {
+   //     Ok(file) => file,
+   //     Err(error) => panic!("Problem opening the file: {:?}", error),
+   // };
+   // f=f.unwrap();
+   // let reader = BufReader::new(f);
+
+   // for tmp_key in reader.lines() {
+   //     println!("{}", tmp_key?);
+   // }
+     let mut file = match File::open("/tmp/test.txt") {
+        Err(why) => panic!("couldn't open {}: {}", "/tmp/test.txt", why),
+        Ok(file) => file,
+    };
+
+    // Read the file contents into a string, returns `io::Result<usize>`
+    let mut s = String::new();
+    match file.read_to_string(&mut s) {
+        Err(why) => panic!("couldn't read {}: {}", "/tmp/test.txt", why),
+        Ok(_) => print!("{} contains:\n{}", "/tmp/test.txt", s),
+    }
+    println!("\nKey received= {}",s);
+    let key=s.as_bytes();
+    //let key=tmp_key;
+
+    // 3. talk to kbs
+    //let request = RetrieveKeyRequest { quote };
+    //let retrieved_key = retreive_key_from_kbs(&url, secret.user_data.keyid, &request).await?;
+    //let retrieved_key_str="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";
+   // let mut object: retrieved_key = serde_json::from_str(retrieved_key_str).unwrap();
+//    println!("Encryption Key Retrieved!");
+//
+//    // 4. disk
+//    //let mut key_str="testing_key";
+//    //let mut key = key_str.as_bytes();
+//    let mut key_test="IDLjkkH0i9FUt+z9nDFFkPfB1b4Ri3gnqbKMJwDOCZfncxjZ6uCtGPBhfQKrSUq6iwtkljrAWudE5pZzyedRoN2FHylh+bCA9VwXbqKMqyTyik3g6VesAdZnnOypDEZQJ7t5q4/678C4Xa9+yNo1nKOqxeg911arldcvjWVhLS/qrgorheQ7SmITsPCgpdQHeuKIbIWOqQEJ6NfpEOhTWmzrQqQc9jMsv+w7c3e0UBcK5Tgp1gBSATQ0XxJ4+97wll85NdRJdUg70b5pX6fHV0ksNQpd4Cel2i1OEBkZuGk6Tnza4tRQUwGu6VY8MW7xd842pVj1qLOFy6AvmrnlzQd0nTZtmO9YkECiHiOHDLlh98pv92gqeimSTjMn40Sh";
+//    //let mut retrieved_key_str="dGhpcyBpcyBmb3IgIHRlc3Rpbmc";
+//    let mut key = general_purpose::STANDARD
+//        .decode(key_test)
+//        .expect("Analyze Base64 Key Failed!");
+//    println!("key.len={} and KEY_LENGTH = {}",key.len(),KEY_LENGTH);
+//    //if key.len() != KEY_LENGTH {
+//    //    panic!("FDE Key not Support!");
+//    //}
+//
+//    println!("before calling crypt_setup!");
+      crypt_setup(root.to_string(), name.to_string(), &key);
+//    key.zeroize();
+//    println!("Encryption Disk Mounted!");
+    Ok(())
+}
