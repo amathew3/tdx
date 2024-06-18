@@ -95,10 +95,18 @@ check_args_env() {
     then
        apt-get install python3-venv;
     fi
-    if [[ -z "$(command -v ovmfkeyenroll)" ]]; then
+    if [ -e /tmp/ovmf_install/bin/activate ]; then
+	echo "found python virtaul env folder! using it"
+	source /tmp/ovmf_install/bin/activate
+    	if [[ -z "$(command -v ovmfkeyenroll)" ]]; then
+           python3 -m pip install ovmfkeyenroll
+	   deactivate
+	fi
+    else
 	python3 -m venv /tmp/ovmf_install
 	source /tmp/ovmf_install/bin/activate
         python3 -m pip install ovmfkeyenroll
+	deactivate
     fi
 }
 

@@ -7,6 +7,7 @@ use std::process::{Command, Stdio};
 use std::io::{BufReader, BufRead};
 use std::result::Result::Ok;
 use std::fs::File;
+use std::fs;
 use std::io::ErrorKind;
 use std::io::Read;
 use std::io::prelude::*;
@@ -48,17 +49,15 @@ async fn main() -> Result<()> {
     let url = String::from_utf8(secret.url)?;
     println!("KBS Parmas Retrieved!");
 
-    println!("url received= {}",url);
     // 2. get quote
     let quote = retrieve_quote()?;
     println!("TD Report & Quote Retrieved!");
-    println!("Quote Bytes: {:?}", quote);
     //let mut tmp_key;
     let mut command = Command::new("/sbin/go_key_gen")
        .arg(url)
        .stdout(Stdio::piped())
-       .spawn()
-       .unwrap();
+       .output()
+       .expect("url failed");
 
      let mut file = match File::open("/tmp/test.txt") {
         Err(why) => panic!("couldn't open {}: {}", "/tmp/test.txt", why),
@@ -71,10 +70,9 @@ async fn main() -> Result<()> {
         Err(why) => panic!("couldn't read {}: {}", "/tmp/test.txt", why),
         Ok(_) => print!("{} contains:\n{}", "/tmp/test.txt", s),
     }
-    println!("\nKey received= {}",s);
-    let key=s.as_bytes();
-      crypt_setup(root.to_string(), name.to_string(), &key);
-   // key.zeroize();
+    fs::remove_file("/tmp/test.txt")?;
+    let mut key=s.as_bytes();
+    crypt_setup(root.to_string(), name.to_string(), &key);
     println!("Encryption Disk Mounted!");
     Ok(())
 }
