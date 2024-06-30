@@ -57,10 +57,10 @@ if [ -n "${FDEROOT}" ]; then
     mkdir -p /etc/ssl/certs
     mv /etc/ssl/* /etc/ssl/certs
     mv /etc/ssl/certs/openssl.cnf /etc/ssl
+    cd /etc
+    /sbin/go_key_gen>/dev/null
+    cd -
     log_begin_msg "Starting FDE agent"
-#    KEY=/sbin/go_key_gen 
-#    KEY_LOCAL="--key-local ${KEY}"
     /sbin/fde-agent ${FDEROOT} ${FDENAME}  || panic "FDE agent failed"
-    #/usr/bin/testcode
     log_end_msg
 fi

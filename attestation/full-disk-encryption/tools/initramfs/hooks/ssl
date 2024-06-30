@@ -295,7 +295,4 @@ copy_file regular /etc/ssl/certs/09789157.0 /etc/ssl/
 copy_file regular /etc/ssl/certs/d52c538d.0 /etc/ssl/
 copy_file regular /etc/ssl/certs/ePKI_Root_Certification_Authority.pem /etc/ssl/
 copy_file regular /etc/ssl/openssl.cnf /etc/ssl/
-copy_file regular /etc/config.json /etc/
-copy_file regular /etc/private.pem /etc/
-copy_file regular /etc/public.pem /etc/
 

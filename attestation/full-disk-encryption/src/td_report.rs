@@ -5,6 +5,7 @@ const TD_INFO_SIZE: usize = 0x200;
 
 pub struct TDReport {
     pub td_info: TDInfo,
+    pub tee_tcb_info: TEE_TCB_INFO,
 }
 
 impl TDReport {
@@ -12,10 +13,31 @@ impl TDReport {
         let offset = REPORT_MAX_STRUCT_SIZE + TEE_TCB_INFO_SIZE + RESERVED_SIZE;
         Self {
             td_info: TDInfo::new(bytes[offset..offset + TD_INFO_SIZE].to_vec()),
+            tee_tcb_info: TEE_TCB_INFO::new(bytes[REPORT_MAX_STRUCT_SIZE..offset + TD_INFO_SIZE].to_vec()),
         }
     }
 }
 
+pub struct TEE_TCB_INFO {
+    //member
+    pub mrseam: Vec<u8>,        //  0x30
+    pub mrsignerseam: Vec<u8>,  //  0x30
+}
+
+impl TEE_TCB_INFO {
+    pub fn new(bytes: Vec<u8>) -> Self {
+        let mut offset: usize = 0x18;
+        let mrseam = bytes[offset..offset + 0x30].to_vec();
+
+        offset += 0x30;
+        let mrsignerseam = bytes[offset..offset + 0x30].to_vec();
+
+        Self {
+            mrseam,
+            mrsignerseam,
+        }
+    }
+}
 pub struct TDInfo {
     //member
     pub attributes: Vec<u8>,    //  0x08

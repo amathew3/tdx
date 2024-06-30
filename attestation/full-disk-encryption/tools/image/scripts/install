@@ -49,5 +49,8 @@ mv /etc/grub.d/.30_os-prober /etc/grub.d/30_os-prober
 
 INITRD_NAME=`ls /boot | grep initrd.img-6.5.0-1003* | head -1`
 update-initramfs -u -k ${INITRD_NAME#initrd.img-}
-
+sed -i 's|[#]*PasswordAuthentication .*|PasswordAuthentication yes|g' /etc/ssh/sshd_config
+sed -i 's|[#]*PermitRootLogin .*|PermitRootLogin yes|g' /etc/ssh/sshd_config
+sed -i 's|[#]*KbdInteractiveAuthentication .*|KbdInteractiveAuthentication yes|g' /etc/ssh/sshd_config
+ssh-keygen -A
 yes $ROOT_PASS | passwd root
