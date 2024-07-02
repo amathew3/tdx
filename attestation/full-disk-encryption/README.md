@@ -12,7 +12,7 @@ Extensions(Intel TDX)](https://www.intel.com/content/www/us/en/developer/article
   
 ## Preparation
 
-We build the Ubuntu 22.04 guest image on the Ubuntu 22.04 host, and validate it. If you work in other environment, please adapt scripts in the below sections carefully (not recommended).
+We build the Ubuntu 24.04 guest image on the Ubuntu 24.04 host, and validate it. If you work in other environment, please adapt scripts in the below sections carefully (not recommended).
 
 **Note: The default FDE solution is just a reference implementation. Both fde-agent and fde-image.sh depend on an available KBS (Key Broker Service). Otherwise they cannot work. Please modify fde-agent code to add KBS information before running the solution. The detail can be found in `attestation/full-disk-encryption`.**
 
@@ -47,6 +47,7 @@ The `KEY=key` and `KEY_ID=keyid` are retrieved in step 1. The `TDX_REPO_LOCAL` i
 Install ovmfkeyenroll tool.
 
 ```
+NOTE: Ubuntu 24.04, pip installatons works on virtual environment. Create a venv for installing below package.
 pip3 install ovmfkeyenroll
 ```
 

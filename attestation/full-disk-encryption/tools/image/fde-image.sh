@@ -14,15 +14,15 @@ THIS_DIR=$(dirname "$(readlink -f "$0")")
 export FDE_DIR=${THIS_DIR}/../../../full-disk-encryption
 
 # Default rootfs is from ubuntu cloud image
-ROOTFS_URL=https://cloud-images.ubuntu.com/mantic/current
-ROOTFS_TAR=mantic-server-cloudimg-amd64-root.tar.xz
+ROOTFS_URL=https://cloud-images.ubuntu.com/noble/current/
+ROOTFS_TAR=noble-server-cloudimg-amd64-root.tar.xz
 # Size of rootfs partition and boot partition
 ROOTFS_SIZE=10G
 BOOT_SIZE=2G
 # TDX package repo
 TDX_REPO_URL=""
 ROOT_PASS="123456"
-OUTPUT_IMAGE=td-guest-ubuntu-23.10-encrypted.img
+OUTPUT_IMAGE=td-guest-ubuntu-24.04-encrypted.img
 
 # key & key_id
 KEY=""

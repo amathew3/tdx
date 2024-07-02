@@ -54,12 +54,9 @@ if [ -n "${FDEROOT}" ]; then
         panic "FDE agent executable not found"
     fi
     echo "port=4050">/etc/tdx-attest.conf
-    mkdir -p /etc/ssl/certs
-    mv /etc/ssl/* /etc/ssl/certs
-    mv /etc/ssl/certs/openssl.cnf /etc/ssl
-    cd /etc
-    /sbin/go_key_gen>/dev/null
-    cd -
+    #mkdir -p /etc/ssl/certs
+    #mv /etc/ssl/* /etc/ssl/certs
+    #mv /etc/ssl/certs/openssl.cnf /etc/ssl
     log_begin_msg "Starting FDE agent"
     /sbin/fde-agent ${FDEROOT} ${FDENAME}  || panic "FDE agent failed"
     log_end_msg

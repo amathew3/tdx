@@ -198,6 +198,7 @@ async fn main() -> Result<()> {
     
 
     let padding = Oaep::new::<Sha256>();
+    //get_private_key_bytes(); Implement the logic to get the private.pem file content here.
     let private_key = RsaPrivateKey::read_pkcs1_pem_file("/etc/private.pem").unwrap();//expect("Failed to read public key");
     let dec_data = private_key.decrypt(padding, &wrapped_swk_bytes).expect("failed to decrypt");
     //println!("SWK {:?}, Length {:?}", dec_data, dec_data.len());

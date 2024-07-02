@@ -24,9 +24,8 @@ echo "deb [trusted=yes arch=amd64] file:/opt/intel/sgx_debian_local_repo mantic 
     tee /etc/apt/sources.list.d/sgx_debian_local_repo.list
 
 # Install packages
-#apt update && yes | DEBIAN_FRONTEND=noninteractive apt install -y  kobuk-tdx-guest  grub2 grub-efi-amd64-signed shim-signed \
-#    grub-efi-amd64-bin libtdx-attest libcryptsetup-dev golang ca-certificates openssl
-apt update && yes | DEBIAN_FRONTEND=noninteractive apt install -y  kobuk-tdx-guest  libtdx-attest libcryptsetup-dev golang ca-certificates openssl
+apt update && apt install --yes --allow-downgrades linux-image-generic shim-signed grub-efi-amd64-signed grub-efi-amd64-bin tdx-tools-guest \
+                           	python3-pytdxmeasure libtdx-attest libcryptsetup-dev golang ca-certificates openssl
 
 # Install Grub2
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=ubuntu
@@ -47,7 +46,7 @@ mv /etc/grub.d/30_os-prober /etc/grub.d/.30_os-prober
 update-grub
 mv /etc/grub.d/.30_os-prober /etc/grub.d/30_os-prober
 
-INITRD_NAME=`ls /boot | grep initrd.img-6.5.0-1003* | head -1`
+INITRD_NAME=`ls /boot | grep initrd.img-6.8.0-36* | head -1`
 update-initramfs -u -k ${INITRD_NAME#initrd.img-}
 sed -i 's|[#]*PasswordAuthentication .*|PasswordAuthentication yes|g' /etc/ssh/sshd_config
 sed -i 's|[#]*PermitRootLogin .*|PermitRootLogin yes|g' /etc/ssh/sshd_config

@@ -79,10 +79,10 @@ make_rootfs() {
     # copy_fde_agent_target_rootfs
     cp ${FDE_DIR}/target/release/fde-agent /tmp/mnt/root/sbin/
     cp ${FDE_DIR}/tools/initramfs/scripts/init-premount/fde-agent /tmp/mnt/root/usr/share/initramfs-tools/scripts/init-premount/
+    cp -r ${FDE_DIR}/public.pem /tmp/mnt/root/etc/public.pem
     cp ${FDE_DIR}/tools/initramfs/modules /tmp/mnt/root/etc/initramfs-tools/
     cp -r ${FDE_DIR}/tools/initramfs/hooks/* /tmp/mnt/root/usr/share/initramfs-tools/hooks/
     cp -r ${FDE_DIR}/tools/image/netplan.yaml /tmp/mnt/root/etc/netplan
-    cp -r ${FDE_DIR}/go_key_gen /tmp/mnt/root/sbin
 
 
     # Mount other neccesary fs for chroot
