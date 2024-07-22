@@ -34,6 +34,7 @@ usage() {
 Usage: $(basename "$0") [OPTION]...
  [Required]
   -k <disk encryption key>          Key for encryptin disk
+  -u <kbs url>                      kbs url with transfer link
   -i <disk encryption key_id>       The key_id binding with key
  [Optional]
   -r <rootfs partition size>        Rootfs partition size, default is 10G
@@ -45,7 +46,7 @@ EOF
 }
 
 process_args() {
-    while getopts "h:r:b:o:p:k:s:l:v:i:" option; do
+    while getopts "h:r:b:o:p:k:s:l:v:i:u:" option; do
         case "$option" in
             r) ROOTFS_SIZE=$OPTARG;;
             b) BOOT_SIZE=$OPTARG;;
@@ -53,6 +54,7 @@ process_args() {
             p) ROOT_PASS=$OPTARG;;
             k) KEY=$OPTARG;;
             i) KEY_ID=$OPTARG;;
+	    u) URL=$OPTARG;;
             h) usage
                exit 0
                ;;
@@ -109,6 +111,31 @@ check_args_env() {
 	deactivate
     fi
 }
+modify_ovmf() {
+    source /tmp/ovmf_install/bin/activate
+    cp /usr/share/qemu/OVMF.fd $FDE_DIR/tools/image
+    printf $URL>$FDE_DIR/tools/image/url.txt
+    NAME="KBSURL"
+    GUID="0d9b4a60-e0bf-4a66-b9b1-db1b98f87770"
+    DATA="url.txt"
+    python3 $FDE_DIR/tools/image/enroll_vars.py -i OVMF.fd -o OVMF_FDE.fd -n $NAME -g $GUID -d $DATA
+    cp /etc/kbs/certs/tls/tls.crt $FDE_DIR/tools/image/cert.cer
+    NAME="KBSCert"
+    GUID="d2bf05a0-f7f8-41b6-b0ff-ad1a31c34d37"
+    DATA="cert.cer"
+    python3 $FDE_DIR/tools/image/enroll_vars.py -i OVMF_FDE.fd -o OVMF_FDE.fd -n $NAME -g $GUID -d $DATA
+    JSON_UserData='{"keyid":"%s"}\n'
+    printf "$JSON_UserData" "$KEY_ID">userdata.txt
+    NAME="KBSUserData"
+    GUID="732284dd-70c4-472a-aa45-1ffda02caf74"
+    DATA="userdata.txt"
+    python3 $FDE_DIR/tools/image/enroll_vars.py -i OVMF_FDE.fd -o OVMF_FDE.fd -n $NAME -g $GUID -d $DATA
+    deactivate
+}
+
+
+
+
 
 create_image() {
     # Caculate image size, reserve 101M for EFI and BIOS boot
@@ -155,5 +182,5 @@ echo "=============== Image Rootfs Created ============="
 
 # Deactivate partitions
 close_partitions "$LOOPDEV"
-
+modify_ovmf
 echo "=============== Building Finished ================"

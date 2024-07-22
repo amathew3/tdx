@@ -35,12 +35,13 @@ make -C ../full-disk-encryption
 
 There are several ways to create FDE image. The [wiki page](https://help.ubuntu.com/community/Full_Disk_Encryption_Howto_2019) in Ubuntu community provides a base knowledge. Besides, install fde-agent and initramfs-tools in this repo. Finally, append the option `cryptdevice` in the kernel command (refer [link](https://wiki.archlinux.org/title/dm-crypt/System_configuration)) and then update the Grub config.
 
+Make sure your public.pem and private.pem are available in `FDE_DIR`.
 ```
 cd ${FDE_DIR}/attestation/full-disk-enryption/tools/image
-./fde-image.sh -k $KEY -i $KEY_ID
+./fde-image.sh -k $KEY -i $KEY_ID -u $KBS_URL
 ```
 
-The `KEY=key` and `KEY_ID=keyid` are retrieved in step 1. The `TDX_REPO_LOCAL` is built from `tdx-tools`. 
+The `KEY=key`,`KEY_ID=keyid` and $KBS_URL are retrieved in step 1. The `TDX_REPO_LOCAL` is built from `tdx-tools`. 
 
 ### 4. Enroll variables to OVMF
 

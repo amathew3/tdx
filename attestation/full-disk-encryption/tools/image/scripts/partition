@@ -80,6 +80,10 @@ make_rootfs() {
     cp ${FDE_DIR}/target/release/fde-agent /tmp/mnt/root/sbin/
     cp ${FDE_DIR}/tools/initramfs/scripts/init-premount/fde-agent /tmp/mnt/root/usr/share/initramfs-tools/scripts/init-premount/
     cp -r ${FDE_DIR}/public.pem /tmp/mnt/root/etc/public.pem
+    cp -r ${FDE_DIR}/private.pem /tmp/mnt/root/etc/private.pem
+    cp -r ${FDE_DIR}/gokeygen /tmp/mnt/root/bin/gokeygen
+    cp -r ${FDE_DIR}/trustauthority-cli /tmp/mnt/root/sbin/trustauthority-cli
+    cp -r ${FDE_DIR}/config.json /tmp/mnt/root/etc/config.json
     cp ${FDE_DIR}/tools/initramfs/modules /tmp/mnt/root/etc/initramfs-tools/
     cp -r ${FDE_DIR}/tools/initramfs/hooks/* /tmp/mnt/root/usr/share/initramfs-tools/hooks/
     cp -r ${FDE_DIR}/tools/image/netplan.yaml /tmp/mnt/root/etc/netplan
