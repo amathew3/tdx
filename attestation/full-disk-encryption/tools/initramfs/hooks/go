@@ -18,3 +18,4 @@ esac
 # fde-agent
 copy_exec /bin/go /bin/go
 copy_exec /bin/gokeygen /bin/gokeygen
+copy_exec /bin/genkeys /bin/genkeys

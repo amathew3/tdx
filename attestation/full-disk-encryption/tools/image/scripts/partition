@@ -59,6 +59,7 @@ make_rootfs() {
     local ROOT_ENC=$5
     local ROOT=$6
     local ROOT_PASS=$7
+    local FIRST_BOOT=$8
 
     # Download rootfs
     if [[ ! -f $ROOTFS_TAR ]] ; then
@@ -80,9 +81,8 @@ make_rootfs() {
     cp ${FDE_DIR}/target/release/fde-agent /tmp/mnt/root/sbin/
     cp ${FDE_DIR}/tools/initramfs/scripts/init-premount/fde-agent /tmp/mnt/root/usr/share/initramfs-tools/scripts/init-premount/
     cp -r ${FDE_DIR}/public.pem /tmp/mnt/root/etc/public.pem
-    cp -r ${FDE_DIR}/private.pem /tmp/mnt/root/etc/private.pem
     cp -r ${FDE_DIR}/gokeygen /tmp/mnt/root/bin/gokeygen
-    cp -r ${FDE_DIR}/trustauthority-cli /tmp/mnt/root/sbin/trustauthority-cli
+    cp -r ${FDE_DIR}/genkeys /tmp/mnt/root/bin/genkeys
     cp -r ${FDE_DIR}/config.json /tmp/mnt/root/etc/config.json
     cp ${FDE_DIR}/tools/initramfs/modules /tmp/mnt/root/etc/initramfs-tools/
     cp -r ${FDE_DIR}/tools/initramfs/hooks/* /tmp/mnt/root/usr/share/initramfs-tools/hooks/
@@ -99,7 +99,7 @@ make_rootfs() {
 
     # Install packages and configure environment
     cp scripts/install /tmp/mnt/root/tmp/
-    chroot /tmp/mnt/root/ /bin/bash tmp/install none  $ROOT $ROOT_PASS
+    chroot /tmp/mnt/root/ /bin/bash tmp/install none  $ROOT $ROOT_PASS $FIRST_BOOT
     rm /tmp/mnt/root/tmp/install
 
     # Clean up mount points

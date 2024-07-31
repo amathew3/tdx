@@ -33,6 +33,7 @@ for x in $CMDLINE; do
         set -- ${CRYPTDEVICE}
         FDEROOT=$1
         FDENAME=$2
+	FIRST_BOOT=$3
         IFS=$oldIFS
         ;;
     esac
@@ -58,7 +59,11 @@ if [ -n "${FDEROOT}" ]; then
     mv /etc/ssl/* /etc/ssl/certs
     mv /etc/ssl/certs/openssl.cnf /etc/ssl
     update-ca-certificates
+    if [ $FIRST_BOOT -gt 2 ]; then
+    	/bin/genkeys
+    fi
+    FIRST_BOOT="--boot-type ${FIRST_BOOT}"
     log_begin_msg "Starting FDE agent"
-    /sbin/fde-agent ${FDEROOT} ${FDENAME}  || panic "FDE agent failed"
+    /sbin/fde-agent ${FDEROOT} ${FDENAME} $FIRST_BOOT  || panic "FDE agent failed"
     log_end_msg
 fi

@@ -27,7 +27,8 @@ OUTPUT_IMAGE=td-guest-ubuntu-24.04-encrypted.img
 # key & key_id
 KEY=""
 KEY_ID=""
-
+URL=""
+FIRST_BOOT=2
 
 usage() {
     cat << EOF
@@ -46,7 +47,7 @@ EOF
 }
 
 process_args() {
-    while getopts "h:r:b:o:p:k:s:l:v:i:u:" option; do
+    while getopts "h:r:b:o:p:k:s:l:v:i:u:f:" option; do
         case "$option" in
             r) ROOTFS_SIZE=$OPTARG;;
             b) BOOT_SIZE=$OPTARG;;
@@ -55,6 +56,7 @@ process_args() {
             k) KEY=$OPTARG;;
             i) KEY_ID=$OPTARG;;
 	    u) URL=$OPTARG;;
+	    f) FIRST_BOOT=$OPTARG;;
             h) usage
                exit 0
                ;;
@@ -113,7 +115,19 @@ check_args_env() {
 }
 modify_ovmf() {
     source /tmp/ovmf_install/bin/activate
-    cp /usr/share/qemu/OVMF.fd $FDE_DIR/tools/image
+    #need below steps until solving the OVMF key enrollment issue in ovmf noble package.
+    cd /tmp
+    mkdir -p prep_ovmf
+    cd prep_ovmf
+    wget http://launchpadlibrarian.net/688822449/ovmf_2023.05-2_all.deb
+    ar -x ovmf_2023.05-2_all.deb
+    tar -xf data.tar.zst
+    cp usr/share/ovmf/OVMF.fd $FDE_DIR/tools/image
+    cd /tmp
+    rm -rf prep_ovmf
+    cd $FDE_DIR/tools/image
+    URL=$URL$KEY_ID
+    #cp /usr/share/qemu/OVMF.fd $FDE_DIR/tools/image
     printf $URL>$FDE_DIR/tools/image/url.txt
     NAME="KBSURL"
     GUID="0d9b4a60-e0bf-4a66-b9b1-db1b98f87770"
@@ -176,7 +190,7 @@ echo "=============== Image Partition Formatted ========"
 
 # Make rootfs
 echo "Calling make rootfs"
-make_rootfs "$ROOTFS_URL" "$ROOTFS_TAR"  "$EFI" "$BOOT" "$ROOT_ENC" "$ROOT" "$ROOT_PASS"
+make_rootfs "$ROOTFS_URL" "$ROOTFS_TAR"  "$EFI" "$BOOT" "$ROOT_ENC" "$ROOT" "$ROOT_PASS" "$FIRST_BOOT"
 
 echo "=============== Image Rootfs Created ============="
 

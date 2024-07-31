@@ -21,12 +21,18 @@ We build the Ubuntu 24.04 guest image on the Ubuntu 24.04 host, and validate it.
 The `key` to encrypt the image disk is distributed by the KBS, besides, which will bind a unique `keyid` with the `key`. The `keyid` is the key's identifier in the KBS. Consult your KBS to get a pair of key and key_id.
 
 ### 2. Build the fde-agent
+Clone the repo `https://github.com/amathew3/tdx/tree/noble-24.04`
+```
+cd tdx
+FDE_DIR=$PWD/attestation/full-disk-encryption
 
-The fde-agent is placed in the `FDE_DIR=attestaion/full-disk-encryption`. 
+The fde-agent is placed in the `FDE_DIR`. 
 
-The fde-agent is responsible for decrypting a guest image and mounting it as the rootfs. The fde-agent depends on dynamic libraries `libtdx-attest` and `libtdx-attest-dev` in `DCAP`. The `DCAP` can be downloaded from [official website](https://download.01.org/intel-sgx/sgx-dcap/). Please get the correct version of DCAP and install the libraries. Then build the fde-agent by the following commands.
+The fde-agent is responsible for decrypting a guest image and mounting it as the rootfs. The fde-agent depends on dynamic libraries `libtdx-attest` and `libtdx-attest-dev` in `DCAP`.This package can be installed using below commands.
 
 ```
+sudo apt install -y libtdx-attest libtdx-attest-dev
+cd $FDE_DIR
 make clean -C ../full-disk-encryption
 make -C ../full-disk-encryption
 ```
@@ -35,71 +41,84 @@ make -C ../full-disk-encryption
 
 There are several ways to create FDE image. The [wiki page](https://help.ubuntu.com/community/Full_Disk_Encryption_Howto_2019) in Ubuntu community provides a base knowledge. Besides, install fde-agent and initramfs-tools in this repo. Finally, append the option `cryptdevice` in the kernel command (refer [link](https://wiki.archlinux.org/title/dm-crypt/System_configuration)) and then update the Grub config.
 
-Make sure your public.pem and private.pem are available in `FDE_DIR`.
+For retrieving the TD properties build a sample encrypted image first. Use dummy values for generating this image.
+Copy your public key as `public.pem` to $FDE_DIR before doing the below steps.
 ```
-cd ${FDE_DIR}/attestation/full-disk-enryption/tools/image
-./fde-image.sh -k $KEY -i $KEY_ID -u $KBS_URL
+KEY=123456
+KEY_ID=b8a5f372-5793
+KBS_URL=http://127.0.0.1:8002
+cd ${FDE_DIR}/tools/image
+sudo ./fde-image.sh -k $KEY -i $KEY_ID -u $KBS_URL -f 1
+sudo chown $USER:$USER OVMF_FDE.fd
+sudo chown $USER:$USER td-guest-ubuntu-24.04-encrypted.img
+cd ../../
 ```
 
-The `KEY=key`,`KEY_ID=keyid` and $KBS_URL are retrieved in step 1. The `TDX_REPO_LOCAL` is built from `tdx-tools`. 
+The encrypted image and updated OVMF files will be generated in the current folder.
+Run the `tdx_guest_load.sh` script, this will boot the TD using the generated image and OVMF.
+The script will print the TD properties and quote data to the console.
+'''
+./tdx_guest_load.sh
+export QUOTE=<copied content>
+export MRTD=<copied content>
+export MRSEAM=<copied content>
+export USER_NAME=<kbs_admin_user>
+export PASSWORD=<kbs_password>
+export KBS_URL=<KBS uRL>
+
+curl --cacert /etc/kbs/certs/tls/tls.crt  --location "$KBS_URL/kbs/v1/token"  --header 'Accept: application/jwt'  --header 'Content-Type: application/json'  --data "{    \"username\": \"$USERNAME\",    \"password\": \"$PASSWORD\" }"
+
+export BEARER_TOKN="<copied content>"
+
+curl  --cacert /etc/kbs/certs/tls/tls.crt   --location "$KBS_URL/kbs/v1/key-transfer-policies"  --header 'Accept: application/json'  --header 'Content-type: application/json'   --header "Authorization: Bearer ${BEARER_TOKEN}" --data "{    \"attestation_type\": \"TDX\",      \"tdx\": { \"attributes\": {\"mrsignerseam\": [\"$MRSIGNERSEAM\"],\"mrseam\": [\"$MRSEAM\"],\"mrtd\": [\"$MRTD\"],\"seamsvn\": 4, \"enforce_tcb_upto_date\": false } } }"
+export POLICY_ID=<copy id  from output>
+
+curl  --cacert /etc/kbs/certs/tls/tls.crt --location "$KBS_URL/kbs/v1/keys"  --header 'Accept: application/json'  --header 'Content-type: application/json'   --header "Authorization: Bearer ${BEARER_TOKEN}" --data "{\"key_information\": { \"algorithm\":\"RSA\", \"key_length\":3072 }, \"transfer_policy_id\" : \"$POLICY_ID\"}"
+
+export KEY_TRANSFER_LINK=<copied_content>
+
+'''
+For detailed steps  refere to this link  `https://github.com/intel/trustauthority-kbs.git`
+
+Once the key transfer policy is set in KBS, retrieve the wrapped_swk and wrapped_key using the quote retrieved in step3.
+run the following binary `fde-key-gen`
+Expected to have your private key file as `private.pem` in /etc directory before invoking the script.
+```
+cd $FDE_DIR/fde-key-gen
+make
+./fde-key-gen --transfer-link $KEY_TRANSFER_LINK --quote-bytes $QUOTE --url $URL
+```
+
+this will return the FDE key for encrypting the image.
+```
+KEY=<output of fde_key>
+cd ${FDE_DIR}/tools/image
+sudo ./fde-image.sh -k $KEY -i $KEY_TRANSFER_LINK -u $KBS_URL -f 3
+sudo chown $USER:$USER OVMF_FDE.fd
+sudo chown $USER:$USER td-guest-ubuntu-24.04-encrypted.img
+cd ../../
+```
+
 
 ### 4. Enroll variables to OVMF
 
-Install ovmfkeyenroll tool.
-
-```
-NOTE: Ubuntu 24.04, pip installatons works on virtual environment. Create a venv for installing below package.
-pip3 install ovmfkeyenroll
-```
-
-Enroll Key Broker Service (KBS) information to OVMF
-
-1. KBS URL
-
-```
-NAME="KBSURL"
-GUID="0d9b4a60-e0bf-4a66-b9b1-db1b98f87770"
-DATA="url.txt"
-python3 tools/image/enroll_vars.py -i OVMF.fd -o OVMF_FDE.fd -n $NAME -g $GUID -d $DATA
-```
-
-2. KBS Certificate
-
-```
-NAME="KBSCert"
-GUID="d2bf05a0-f7f8-41b6-b0ff-ad1a31c34d37"
-DATA="cert.cer"
-python3 tools/image/enroll_vars.py -i OVMF_FDE.fd -o OVMF_FDE.fd -n $NAME -g $GUID -d $DATA
-```
-
-3. KBS User Data
-
-```
-NAME="KBSUserData"
-GUID="732284dd-70c4-472a-aa45-1ffda02caf74"
-DATA="userdata.txt"
-python3 tools/image/enroll_vars.py -i OVMF_FDE.fd -o OVMF_FDE.fd -n $NAME -g $GUID -d $DATA
-```
-
-It is recommended to use a json structure to save the userdata, at least including the `keyid` item retrieved in step 1. You can customize the enrolled data, detail in `src/ovmf_var.rs`
-
-```
-# cat userdata.txt
-{
-    "keyid":"sth"
-}
-```
+Installing ovmfkeyenroll tool and inserting Key broker Service information into OVMF will be taken care in `fde-image.sh` script.
 
 ### TDX tools 
 
 The script `run_td.sh` helps launch a TDX guest from an encrypted guest image built through above steps. 
+```
+TD_IMG=tools/image/td-guest-ubuntu-24.04-encrypted.img ../../guest-tools/run_td.sh -f -o tools/image/OVMF_FDE.fd
+-f to enable full disk encryption
+-o specify the updated OVMF path
+```
 
 ## Validation
 
 Launch a tdvm guest by the following command. 
 
 ```
-TD_IMG=<absolute path of encrypted image> ./run_td.sh -f -o <OVMF.fd path>
+TD_IMG=<absolute path of encrypted image> ../../guest-tools/run_td.sh -f -o <OVMF.fd path>
 
 ```
 

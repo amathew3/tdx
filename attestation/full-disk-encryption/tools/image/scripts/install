@@ -3,6 +3,7 @@
 TDX_REPO_URL=$1
 ROOT=$2
 ROOT_PASS=$3
+FIRST_BOOT=$4
 
 echo "Installing packages for image"
 
@@ -25,13 +26,13 @@ echo "deb [trusted=yes arch=amd64] file:/opt/intel/sgx_debian_local_repo mantic 
 
 # Install packages
 apt update && apt install --yes --allow-downgrades linux-image-generic shim-signed grub-efi-amd64-signed grub-efi-amd64-bin tdx-tools-guest \
-                           	python3-pytdxmeasure libtdx-attest libcryptsetup-dev golang ca-certificates openssl
+                           	python3-pytdxmeasure libtdx-attest-dev trustauthority-cli libcryptsetup-dev golang ca-certificates openssl
 
 # Install Grub2
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=ubuntu
 echo "Before calling CMDLINE"
 # Configure kernel command line
-CMDLINE="cryptdevice=UUID=$(blkid -o value -s UUID $ROOT):rootfs-enc-dev console=hvc0"
+CMDLINE="cryptdevice=UUID=$(blkid -o value -s UUID $ROOT):rootfs-enc-dev:$FIRST_BOOT console=hvc0"
 sed -i -e "/GRUB_CMDLINE_LINUX_DEFAULT=/ s/=.*/=\"$CMDLINE\"/" \
     /etc/default/grub.d/50-cloudimg-settings.cfg
 

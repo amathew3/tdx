@@ -39,7 +39,7 @@ func main() {
     // Save the private key to a file.
 //    privateKey.E = 3
 //    publicKey.E = 3
-    privateKeyFile, err := os.Create("private.pem")
+    privateKeyFile, err := os.Create("/etc/private.pem")
     if err != nil {
         panic(err)
     }
@@ -54,7 +54,7 @@ func main() {
     }
 
     // Save the public key to a file.
-    publicKeyFile, err := os.Create("public.pem")
+    publicKeyFile, err := os.Create("/etc/public.pem")
     if err != nil {
         panic(err)
     }
