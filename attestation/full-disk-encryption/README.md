@@ -122,9 +122,9 @@ Installing ovmfkeyenroll tool and inserting Key broker Service information into 
 The script `run_td.sh` helps launch a TDX guest from an encrypted guest image built through above steps. 
 ```
 TD_IMG=tools/image/td-guest-ubuntu-24.04-encrypted.img ../../guest-tools/run_td.sh -f -o tools/image/OVMF_FDE.fd
+```
 -f to enable full disk encryption
 -o specify the updated OVMF path
-```
 
 ## Validation
 
