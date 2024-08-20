@@ -100,7 +100,7 @@ check_args_env() {
        apt-get install python3-venv;
     fi
     if [ -e /tmp/ovmf_install/bin/activate ]; then
-	echo "found python virtaul env folder! using it"
+	echo "Found python virtaul env folder! using it"
 	source /tmp/ovmf_install/bin/activate
     	if [[ -z "$(command -v ovmfkeyenroll)" ]]; then
            python3 -m pip install ovmfkeyenroll
@@ -175,7 +175,7 @@ echo "=============== Empty Image Inited ==============="
 # shellcheck disable=SC1091
 . scripts/partition
 create_partitions "$BOOT_SIZE" "$OUTPUT_IMAGE"
-echo "partiotions done"
+echo "Partitions done"
 
 echo "=============== Image Partition Created =========="
 
@@ -184,7 +184,7 @@ create_luks_partition "$KEY"
 echo "=============== Root Encrypted & Opened =========="
 
 format_partitions "$EFI" "$BOOT" "$ROOT_ENC"
-echo "formating done"
+echo "Formating done"
 
 echo "=============== Image Partition Formatted ========"
 

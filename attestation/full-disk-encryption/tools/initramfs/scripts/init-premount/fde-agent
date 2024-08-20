@@ -55,10 +55,6 @@ if [ -n "${FDEROOT}" ]; then
         panic "FDE agent executable not found"
     fi
     echo "port=4050">/etc/tdx-attest.conf
-    mkdir -p /etc/ssl/certs
-    mv /etc/ssl/* /etc/ssl/certs
-    mv /etc/ssl/certs/openssl.cnf /etc/ssl
-    update-ca-certificates
     if [ $FIRST_BOOT -gt 2 ]; then
     	/bin/genkeys
     fi

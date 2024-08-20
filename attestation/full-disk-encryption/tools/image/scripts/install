@@ -47,7 +47,7 @@ mv /etc/grub.d/30_os-prober /etc/grub.d/.30_os-prober
 update-grub
 mv /etc/grub.d/.30_os-prober /etc/grub.d/30_os-prober
 
-INITRD_NAME=`ls /boot | grep initrd.img-6.8.0-36* | head -1`
+INITRD_NAME=`ls /boot | grep initrd.img-6.8.0-* | head -1`
 update-initramfs -u -k ${INITRD_NAME#initrd.img-}
 sed -i 's|[#]*PasswordAuthentication .*|PasswordAuthentication yes|g' /etc/ssh/sshd_config
 sed -i 's|[#]*PermitRootLogin .*|PermitRootLogin yes|g' /etc/ssh/sshd_config

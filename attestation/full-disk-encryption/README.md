@@ -18,20 +18,25 @@ We build the Ubuntu 24.04 guest image on the Ubuntu 24.04 host, and validate it.
 
 ### 1. Register a key 
 
-The `key` to encrypt the image disk is distributed by the KBS, besides, which will bind a unique `keyid` with the `key`. The `keyid` is the key's identifier in the KBS. Consult your KBS to get a pair of key and key_id.
+The `key` to encrypt the image disk is distributed by the KBS, besides, which will bind a unique `keyid` with the `key`. The `keyid` is the key's identifier in the KBS. Consult your KBS to get a pair of key and key_id. Please refere to `https://github.com/intel/trustauthority-kbs.git` for the KBS service provided by Intel.
 
 ### 2. Build the fde-agent
 Clone the repo `https://github.com/amathew3/tdx/tree/noble-24.04`
+
 ```
+git clone https://github.com/amathew3/tdx.git
 cd tdx
 FDE_DIR=$PWD/attestation/full-disk-encryption
+```
 
-The fde-agent is placed in the `FDE_DIR`. 
-
-The fde-agent is responsible for decrypting a guest image and mounting it as the rootfs. The fde-agent depends on dynamic libraries `libtdx-attest` and `libtdx-attest-dev` in `DCAP`.This package can be installed using below commands.
+The fde-agent is responsible for decrypting a guest image and mounting it as the rootfs. The fde-agent depends on dynamic libraries `libtdx-attest` and `libtdx-attest-dev` in `DCAP`. Also additional packages needed for building the `fde-agent`. These packages can be installed using below commands.
 
 ```
-sudo apt install -y libtdx-attest libtdx-attest-dev
+sudo apt update
+
+sudo apt install -y libtdx-attest libtdx-attest-dev build-essential cargo pkg-config libcryptsetup-dev golang gpg wget docker.io
+sudo usermod -a -G docker $USER
+newgrp docker
 cd $FDE_DIR
 make clean -C ../full-disk-encryption
 make -C ../full-disk-encryption
@@ -41,9 +46,13 @@ make -C ../full-disk-encryption
 
 There are several ways to create FDE image. The [wiki page](https://help.ubuntu.com/community/Full_Disk_Encryption_Howto_2019) in Ubuntu community provides a base knowledge. Besides, install fde-agent and initramfs-tools in this repo. Finally, append the option `cryptdevice` in the kernel command (refer [link](https://wiki.archlinux.org/title/dm-crypt/System_configuration)) and then update the Grub config.
 
-For retrieving the TD properties build a sample encrypted image first. Use dummy values for generating this image.
-Copy your public key as `public.pem` to $FDE_DIR before doing the below steps.
+For retrieving the TD properties, build a sample encrypted image first. Use dummy values for generating this image.
+Copy your public key as `public.pem` to $FDE_DIR before doing the below steps. The public and privte key pair can be generared using `genkeys` binary in
+`$FDR` directory, the destination is `/etc`.
 ```
+cd $FDE_DIR
+sudo ./genkeys
+cp /etc/public.pem $FDE_DIR
 KEY=123456
 KEY_ID=b8a5f372-5793
 KBS_URL=http://127.0.0.1:8002
@@ -57,28 +66,32 @@ cd ../../
 The encrypted image and updated OVMF files will be generated in the current folder.
 Run the `tdx_guest_load.sh` script, this will boot the TD using the generated image and OVMF.
 The script will print the TD properties and quote data to the console.
-'''
+
+```
 ./tdx_guest_load.sh
 export QUOTE=<copied content>
 export MRTD=<copied content>
 export MRSEAM=<copied content>
+export MRSIGNERSEAM=<copied content>
+export SEAMSVN=<copied content>
 export USER_NAME=<kbs_admin_user>
 export PASSWORD=<kbs_password>
-export KBS_URL=<KBS uRL>
+export KBS_URL=<kbs url>
 
-curl --cacert /etc/kbs/certs/tls/tls.crt  --location "$KBS_URL/kbs/v1/token"  --header 'Accept: application/jwt'  --header 'Content-Type: application/json'  --data "{    \"username\": \"$USERNAME\",    \"password\": \"$PASSWORD\" }"
+curl --cacert /etc/kbs/certs/tls/tls.crt  --location "$KBS_URL/kbs/v1/token"  --header 'Accept: application/jwt'  --header 'Content-Type: application/json'  --data "{    \"username\": \"$USER_NAME\",    \"password\": \"$PASSWORD\" }"
 
-export BEARER_TOKN="<copied content>"
+export BEARER_TOKEN="<copied content>"
 
-curl  --cacert /etc/kbs/certs/tls/tls.crt   --location "$KBS_URL/kbs/v1/key-transfer-policies"  --header 'Accept: application/json'  --header 'Content-type: application/json'   --header "Authorization: Bearer ${BEARER_TOKEN}" --data "{    \"attestation_type\": \"TDX\",      \"tdx\": { \"attributes\": {\"mrsignerseam\": [\"$MRSIGNERSEAM\"],\"mrseam\": [\"$MRSEAM\"],\"mrtd\": [\"$MRTD\"],\"seamsvn\": 4, \"enforce_tcb_upto_date\": false } } }"
+curl  --cacert /etc/kbs/certs/tls/tls.crt   --location "$KBS_URL/kbs/v1/key-transfer-policies"  --header 'Accept: application/json'  --header 'Content-type: application/json'   --header "Authorization: Bearer ${BEARER_TOKEN}" --data "{    \"attestation_type\": \"TDX\",      \"tdx\": { \"attributes\": {\"mrsignerseam\": [\"$MRSIGNERSEAM\"],\"mrseam\": [\"$MRSEAM\"],\"mrtd\": [\"$MRTD\"],\"seamsvn\": [\"$SEAMSVN\"], \"enforce_tcb_upto_date\": false } } }"
 export POLICY_ID=<copy id  from output>
 
 curl  --cacert /etc/kbs/certs/tls/tls.crt --location "$KBS_URL/kbs/v1/keys"  --header 'Accept: application/json'  --header 'Content-type: application/json'   --header "Authorization: Bearer ${BEARER_TOKEN}" --data "{\"key_information\": { \"algorithm\":\"RSA\", \"key_length\":3072 }, \"transfer_policy_id\" : \"$POLICY_ID\"}"
 
 export KEY_TRANSFER_LINK=<copied_content>
 
-'''
-For detailed steps  refere to this link  `https://github.com/intel/trustauthority-kbs.git`
+```
+
+For detailed steps refere to `trustauthority-kbs` link.
 
 Once the key transfer policy is set in KBS, retrieve the wrapped_swk and wrapped_key using the quote retrieved in step3.
 run the following binary `fde-key-gen`
@@ -86,7 +99,7 @@ Expected to have your private key file as `private.pem` in /etc directory before
 ```
 cd $FDE_DIR/fde-key-gen
 make
-./fde-key-gen --transfer-link $KEY_TRANSFER_LINK --quote-bytes $QUOTE --url $URL
+./fde-key-gen --transfer-link $KEY_TRANSFER_LINK --quote-bytes $QUOTE --url $KBS_URL
 ```
 
 this will return the FDE key for encrypting the image.
