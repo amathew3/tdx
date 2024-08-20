@@ -26,7 +26,6 @@ Clone the repo `https://github.com/amathew3/tdx/tree/noble-24.04`
 ```
 git clone https://github.com/amathew3/tdx.git
 cd tdx
-FDE_DIR=$PWD/attestation/full-disk-encryption
 ```
 
 The fde-agent is responsible for decrypting a guest image and mounting it as the rootfs. The fde-agent depends on dynamic libraries `libtdx-attest` and `libtdx-attest-dev` in `DCAP`. Also additional packages needed for building the `fde-agent`. These packages can be installed using below commands.
@@ -34,9 +33,10 @@ The fde-agent is responsible for decrypting a guest image and mounting it as the
 ```
 sudo apt update
 
-sudo apt install -y libtdx-attest libtdx-attest-dev build-essential cargo pkg-config libcryptsetup-dev golang gpg wget docker.io
+sudo apt install -y  libtdx-attest-dev build-essential cargo pkg-config libcryptsetup-dev golang gpg wget docker.io
 sudo usermod -a -G docker $USER
 newgrp docker
+FDE_DIR=$PWD/attestation/full-disk-encryption
 cd $FDE_DIR
 make clean -C ../full-disk-encryption
 make -C ../full-disk-encryption

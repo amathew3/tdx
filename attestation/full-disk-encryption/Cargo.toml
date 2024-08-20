@@ -25,6 +25,4 @@ sha2 = "0.10.8"
 rand = "0.8.4"
 aes-gcm = "0.9.3"
 generic-array = "1.0.0"
-#tdx-attest-rs = { git = "https://github.com/intel/SGXDataCenterAttestationPrimitives", tag = "DCAP_1.21" }
-tdx-attest-rs = { git = "https://github.com/amathew3/SGXDataCenterAttestationPrimitives.git", branch = "main" }
-
+tdx-attest-rs = { git = "https://github.com/intel/SGXDataCenterAttestationPrimitives", tag = "DCAP_1.21" }
