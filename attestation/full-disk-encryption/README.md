@@ -82,7 +82,7 @@ curl --cacert /etc/kbs/certs/tls/tls.crt  --location "$KBS_URL/kbs/v1/token"  --
 
 export BEARER_TOKEN="<copied content>"
 
-curl  --cacert /etc/kbs/certs/tls/tls.crt   --location "$KBS_URL/kbs/v1/key-transfer-policies"  --header 'Accept: application/json'  --header 'Content-type: application/json'   --header "Authorization: Bearer ${BEARER_TOKEN}" --data "{    \"attestation_type\": \"TDX\",      \"tdx\": { \"attributes\": {\"mrsignerseam\": [\"$MRSIGNERSEAM\"],\"mrseam\": [\"$MRSEAM\"],\"mrtd\": [\"$MRTD\"],\"seamsvn\": [\"$SEAMSVN\"], \"enforce_tcb_upto_date\": false } } }"
+curl  --cacert /etc/kbs/certs/tls/tls.crt   --location "$KBS_URL/kbs/v1/key-transfer-policies"  --header 'Accept: application/json'  --header 'Content-type: application/json'   --header "Authorization: Bearer ${BEARER_TOKEN}" --data "{    \"attestation_type\": \"TDX\",      \"tdx\": { \"attributes\": {\"mrsignerseam\": [\"$MRSIGNERSEAM\"],\"mrseam\": [\"$MRSEAM\"],\"mrtd\": [\"$MRTD\"],\"seamsvn\": $SEAMSVN, \"enforce_tcb_upto_date\": false } } }"
 export POLICY_ID=<copy id  from output>
 
 curl  --cacert /etc/kbs/certs/tls/tls.crt --location "$KBS_URL/kbs/v1/keys"  --header 'Accept: application/json'  --header 'Content-type: application/json'   --header "Authorization: Bearer ${BEARER_TOKEN}" --data "{\"key_information\": { \"algorithm\":\"RSA\", \"key_length\":3072 }, \"transfer_policy_id\" : \"$POLICY_ID\"}"
