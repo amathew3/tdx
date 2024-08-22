@@ -49,7 +49,7 @@ fi
 KERNEL_RELEASE=$(get_kernel_version "$KERNEL_TYPE")
 # select the right kernel for next boot
 grub_set_kernel
-
+grub_set_kernel_args
 # some kernels (for example -intel) might not be installed with the modules-extra
 # but we need it to support a wider range of hardware (network cards, ...)
 # just force the installation of modules-extra to make sure we have it

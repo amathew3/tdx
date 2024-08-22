@@ -53,6 +53,10 @@ EOF
     grub-editenv /boot/grub/grubenv set saved_entry="${MID}>${KID}"
     update-grub
 }
+grub_set_kernel_args(){
+   sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="[^"]*/& clearcpuid=mtrr/' /etc/default/grub.d/50-cloudimg-settings.cfg
+   update-grub
+}
 
 # select the kernel release for next boot
 # NB : this function will read/write the global variable KERNEL_RELEASE

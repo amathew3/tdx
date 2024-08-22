@@ -7,19 +7,19 @@ cleanup() {
     PID_TD=$(cat /tmp/tdx-demo-td-pid.pid 2> /dev/null)
 
     [ ! -z "$PID_TD" ] && echo "Cleanup, kill TD with PID: ${PID_TD}" && kill -TERM ${PID_TD} &> /dev/null
-    sleep 3
+    sleep 10
 }
 TD_IMG=${TD_IMG:-${PWD}/image/tdx-guest-ubuntu-24.04-generic.qcow2}
 TDVF_FIRMWARE=/usr/share/ovmf/OVMF.fd
 FDE=false
 OVMF=false
+DPT=false
 process_args() {
-    echo "Inside process_args"
-    while getopts ":hfo:" option; do
-	echo "Option = $option"
+    while getopts ":hdfo:" option; do
         case "$option" in
             o) OVMF=$OPTARG;;
             f) FDE=true;;
+	    d) DPT=true;;
             h) usage
                exit 0
                ;;
@@ -30,7 +30,6 @@ process_args() {
                ;;
         esac
     done
-    echo "FDE insdie = ${FDE}"
 }
 
 usage() {
@@ -38,6 +37,7 @@ usage() {
 Usage: $(basename "$0") [OPTION]...
   -o <OVMF file>            BIOS firmware device file, for "td"
   -f                        Enable FDE boot
+  -d                        Device Passthrough
   -h                        Show this help
 EOM
 }
@@ -45,8 +45,6 @@ EOM
 cleanup
 process_args "$@"
 
-echo "FDE = $FDE"
-echo "OVMF =$OVMF"
 
 if [ "$1" = "clean" ]; then
     exit 0
@@ -72,18 +70,27 @@ if [[ ${FDE} == true ]]; then
              -serial chardev:mux "
 else
     CONSOLE="-daemonize"
-fi 
-echo $TDVF_FIRMWARE
-echo $CONSOLE
+fi
+if [[ ${DPT} == true ]]; then
+    MEMORY=128
+    DEVICE_PASS="-object iommufd,id=iommufd0 \
+	        -device pcie-root-port,id=pci.1,bus=pcie.0 \
+                -device vfio-pci,host=38:00.0,bus=pci.1,iommufd=iommufd0 -fw_cfg name=opt/ovmf/X-PciMmio64,string=262144 \
+		-pidfile /tmp/tdx-demo-td-pid.pid"
+
+else
+   MEMORY=2
+   DEVICE_PASS="-pidfile /tmp/tdx-demo-td-pid.pid"
+fi
 ###################### RUN VM WITH TDX SUPPORT ##################################
 SSH_PORT=10022
 PROCESS_NAME=td
 LOGFILE='/tmp/tdx-guest-td.log'
 # approach 1 : talk to QGS directly
 QUOTE_ARGS="-device vhost-vsock-pci,guest-cid=3"
-qemu-system-x86_64 -D $LOGFILE \
+/usr/bin/qemu-system-x86_64 -D $LOGFILE \
 		   -accel kvm \
-		   -m 2G -smp 16 \
+		   -m ${MEMORY}G -smp 16 \
 		   -name ${PROCESS_NAME},process=${PROCESS_NAME},debug-threads=on \
 		   -cpu host \
 		   -object tdx-guest,id=tdx \
@@ -96,7 +103,7 @@ qemu-system-x86_64 -D $LOGFILE \
 		   ${CONSOLE} \
 		   -device virtio-blk-pci,drive=virtio-disk0 \
 		   ${QUOTE_ARGS} \
-		   -pidfile /tmp/tdx-demo-td-pid.pid
+		   ${DEVICE_PASS}
 
 ret=$?
 if [ $ret -ne 0 ]; then
