@@ -136,8 +136,8 @@ example,
    ./build_ovmf.sh
    sudo reboot
   ```
-##Libvirt cofiguration for using the newly built qemu.
-```
+### Libvirt cofiguration for using the newly built qemu.
+
 + Apply the following settings to the file /etc/libvirt/qemu.conf
 ```
  user = <your_user_name>
@@ -149,7 +149,7 @@ example,
 ```
   systemctl restart libvirtd
 ```
-## CC mode on GPU.
+## Enabling CC mode on GPU.
 ```
   cd ~/nvidia_setup/nvtrust 
   git submodule update --init 
